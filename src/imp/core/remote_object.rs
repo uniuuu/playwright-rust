@@ -138,8 +138,8 @@ mod remote_enum {
         artifact::Artifact, binding_call::BindingCall, browser::Browser,
         browser_context::BrowserContext, browser_type::BrowserType,
         console_message::ConsoleMessage, dialog::Dialog, element_handle::ElementHandle,
-        frame::Frame, js_handle::JsHandle, page::Page, playwright::Playwright, request::Request,
-        response::Response, route::Route, selectors::Selectors, stream::Stream,
+        frame::Frame, js_handle::JsHandle, locator::Locator, page::Page, playwright::Playwright, 
+        request::Request, response::Response, route::Route, selectors::Selectors, stream::Stream,
         websocket::WebSocket, worker::Worker
     };
 
@@ -236,6 +236,7 @@ mod remote_enum {
         ElementHandle,
         Frame,
         JsHandle,
+        Locator,
         Page,
         Playwright,
         Request,
@@ -268,6 +269,7 @@ mod remote_enum {
                 "ElementHandle" => RemoteArc::ElementHandle(Arc::new(ElementHandle::new(c))),
                 "Frame" => RemoteArc::Frame(Arc::new(Frame::try_new(ctx, c)?)),
                 "JSHandle" => RemoteArc::JsHandle(Arc::new(JsHandle::try_new(c)?)),
+                "Locator" => RemoteArc::Locator(Arc::new(Locator::try_new(ctx, c)?)),
                 "Page" => RemoteArc::Page(Arc::new(Page::try_new(ctx, c)?)),
                 "Playwright" => RemoteArc::Playwright(Arc::new(Playwright::try_new(ctx, c)?)),
                 "Request" => RemoteArc::Request(Request::try_new(ctx, c)?),

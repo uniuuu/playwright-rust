@@ -1,6 +1,6 @@
 pub use crate::imp::frame::{FrameNavigatedEvent, FrameState, Polling};
 use crate::{
-    api::{ElementHandle, JsHandle, Page, Response},
+    api::{ElementHandle, JsHandle, Locator, Page, Response},
     imp::{
         core::*,
         frame::{
@@ -269,6 +269,71 @@ impl Frame {
     /// ```
     pub fn wait_for_selector_builder<'a>(&self, selector: &'a str) -> WaitForSelectorBuilder<'a> {
         WaitForSelectorBuilder::new(self.inner.clone(), selector)
+    }
+
+    // Locator methods
+
+    /// Create a locator that can be used to perform actions on elements matching the selector.
+    pub fn locator(&self, selector: &str) -> Result<Locator, Error> {
+        use crate::imp::locator::Locator as LocatorImpl;
+        let ctx = upgrade(&self.inner)?.context()?;
+        let locator_impl = LocatorImpl::new_with_selector(
+            self.inner.clone(),
+            selector.to_string(),
+            Arc::downgrade(&ctx),
+        )?;
+        // Store the locator in an Arc to keep it alive
+        use std::sync::Arc;
+        use std::collections::HashMap;
+        static mut LOCATOR_STORAGE: Option<std::sync::Mutex<HashMap<String, Arc<LocatorImpl>>>> = None;
+        static LOCATOR_INIT: std::sync::Once = std::sync::Once::new();
+        
+        LOCATOR_INIT.call_once(|| unsafe {
+            LOCATOR_STORAGE = Some(std::sync::Mutex::new(HashMap::new()));
+        });
+        
+        let locator_arc = Arc::new(locator_impl);
+        let locator_guid = locator_arc.guid().as_str().to_string();
+        let locator_weak = Arc::downgrade(&locator_arc);
+        
+        // Store the Arc to prevent it from being dropped
+        unsafe {
+            if let Some(ref storage) = LOCATOR_STORAGE {
+                storage.lock().unwrap().insert(locator_guid, locator_arc);
+            }
+        }
+        
+        Ok(Locator::new(locator_weak))
+    }
+
+    /// Create a locator for elements matching the specified accessibility role and name.
+    pub fn get_by_role(&self, role: &str) -> Result<Locator, Error> {
+        let selector = format!("[role=\"{}\"]", role);
+        self.locator(&selector)
+    }
+
+    /// Create a locator for elements containing the specified text.
+    pub fn get_by_text(&self, text: &str) -> Result<Locator, Error> {
+        let selector = format!("text={}", text);
+        self.locator(&selector)
+    }
+
+    /// Create a locator for form controls associated with the specified label text.
+    pub fn get_by_label(&self, text: &str) -> Result<Locator, Error> {
+        let selector = format!("label={}", text);
+        self.locator(&selector)
+    }
+
+    /// Create a locator for input elements with the specified placeholder text.
+    pub fn get_by_placeholder(&self, text: &str) -> Result<Locator, Error> {
+        let selector = format!("[placeholder=\"{}\"]", text);
+        self.locator(&selector)
+    }
+
+    /// Create a locator for elements with the specified test id attribute.
+    pub fn get_by_test_id(&self, test_id: &str) -> Result<Locator, Error> {
+        let selector = format!("[data-testid=\"{}\"]", test_id);
+        self.locator(&selector)
     }
 
     pub async fn title(&self) -> ArcResult<String> { upgrade(&self.inner)?.title().await }

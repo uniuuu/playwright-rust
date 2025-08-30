@@ -13,7 +13,7 @@ pub use crate::{
 use crate::{
     api::{
         input_device::*, Accessibility, BrowserContext, ConsoleMessage, ElementHandle, FileChooser,
-        Frame, Keyboard, Response, TouchScreen, Video, WebSocket, Worker
+        Frame, Keyboard, Locator, Response, TouchScreen, Video, WebSocket, Worker
     },
     imp::{
         core::*,
@@ -506,6 +506,38 @@ impl Page {
 
     pub fn wait_for_selector_builder<'a>(&self, selector: &'a str) -> WaitForSelectorBuilder<'a> {
         self.main_frame().wait_for_selector_builder(selector)
+    }
+
+    // Locator methods
+
+    /// Create a locator that can be used to perform actions on elements matching the selector.
+    pub fn locator(&self, selector: &str) -> Result<Locator, Error> {
+        self.main_frame().locator(selector)
+    }
+
+    /// Create a locator for elements matching the specified accessibility role and name.
+    pub fn get_by_role(&self, role: &str) -> Result<Locator, Error> {
+        self.main_frame().get_by_role(role)
+    }
+
+    /// Create a locator for elements containing the specified text.
+    pub fn get_by_text(&self, text: &str) -> Result<Locator, Error> {
+        self.main_frame().get_by_text(text)
+    }
+
+    /// Create a locator for form controls associated with the specified label text.
+    pub fn get_by_label(&self, text: &str) -> Result<Locator, Error> {
+        self.main_frame().get_by_label(text)
+    }
+
+    /// Create a locator for input elements with the specified placeholder text.
+    pub fn get_by_placeholder(&self, text: &str) -> Result<Locator, Error> {
+        self.main_frame().get_by_placeholder(text)
+    }
+
+    /// Create a locator for elements with the specified test id attribute.
+    pub fn get_by_test_id(&self, test_id: &str) -> Result<Locator, Error> {
+        self.main_frame().get_by_test_id(test_id)
     }
 
     is_checked! {is_checked, doc = "Errors if the element is not a checkbox or radio input."}

@@ -172,6 +172,22 @@ pub(crate) fn maybe_only_str(v: &Value) -> Result<Option<&str>, Error> {
     Ok(Some(s))
 }
 
+pub(crate) fn only_bool(v: &Value) -> Result<bool, Error> {
+    let b = first(v)
+        .ok_or(Error::InvalidParams)?
+        .as_bool()
+        .ok_or(Error::InvalidParams)?;
+    Ok(b)
+}
+
+pub(crate) fn only_u64(v: &Value) -> Result<u64, Error> {
+    let n = first(v)
+        .ok_or(Error::InvalidParams)?
+        .as_u64()
+        .ok_or(Error::InvalidParams)?;
+    Ok(n)
+}
+
 #[derive(Debug, Serialize)]
 pub(crate) struct Argument {
     pub(crate) value: Map<String, Value>,

@@ -109,6 +109,7 @@ pub(crate) mod element_handle;
 pub(crate) mod file_hooser;
 pub(crate) mod frame;
 pub(crate) mod js_handle;
+pub(crate) mod locator;
 pub(crate) mod page;
 pub(crate) mod request;
 pub(crate) mod response;
