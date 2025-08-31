@@ -6,7 +6,7 @@ macro_rules! setter {
         ),+
     ) => {
         $(
-            paste::paste! {
+            pastey::paste! {
                 #[allow(clippy::wrong_self_convention)]
                 $(#[$meta $($args)*])*
                 pub fn [<$field>](mut self, x:$t) -> Self {
@@ -16,7 +16,7 @@ macro_rules! setter {
             }
         )*
         $(
-            paste::paste! {
+            pastey::paste! {
                 pub fn [<clear_$field>](mut self) -> Self {
                     self.args.$field = None;
                     self

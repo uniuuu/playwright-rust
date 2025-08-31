@@ -43,7 +43,7 @@ pub(crate) struct GetByPlaceholderOptions {
 // Selector generation functions (client-side implementation)
 fn build_role_selector(role: &str, options: Option<&GetByRoleOptions>) -> String {
     let mut selector = format!("internal:role={}", role);
-    
+
     if let Some(opts) = options {
         if let Some(name) = &opts.name {
             selector.push_str(&format!("[name=\"{}\"]", name));
@@ -73,43 +73,43 @@ fn build_role_selector(role: &str, options: Option<&GetByRoleOptions>) -> String
             selector.push_str(&format!("[selected={}]", selected));
         }
     }
-    
+
     selector
 }
 
 fn build_text_selector(text: &str, options: Option<&GetByTextOptions>) -> String {
     let mut selector = format!("internal:text=\"{}\"", text);
-    
+
     if let Some(opts) = options {
         if let Some(exact) = opts.exact {
             selector.push_str(&format!("[exact={}]", exact));
         }
     }
-    
+
     selector
 }
 
 fn build_label_selector(text: &str, options: Option<&GetByLabelOptions>) -> String {
     let mut selector = format!("internal:label=\"{}\"", text);
-    
+
     if let Some(opts) = options {
         if let Some(exact) = opts.exact {
             selector.push_str(&format!("[exact={}]", exact));
         }
     }
-    
+
     selector
 }
 
 fn build_placeholder_selector(text: &str, options: Option<&GetByPlaceholderOptions>) -> String {
     let mut selector = format!("internal:attr=[placeholder=\"{}\"]", text);
-    
+
     if let Some(opts) = options {
         if let Some(exact) = opts.exact {
             selector.push_str(&format!("[exact={}]", exact));
         }
     }
-    
+
     selector
 }
 
@@ -600,46 +600,62 @@ impl Frame {
             let ctx = context.lock().unwrap();
             get_object!(ctx, &frame_guid, Frame)?
         };
-        
+
         let locator = Locator::new_client_side(frame_weak, selector.to_string());
         let locator_arc = Arc::new(locator);
         let locator_weak = Arc::downgrade(&locator_arc);
-        
+
         // Store the Arc so it doesn't get dropped immediately
         // This ensures our client-side locators persist like server-side objects
         std::mem::forget(locator_arc.clone());
-        
+
         Ok(locator_weak)
     }
 
-    pub(crate) async fn get_by_role(&self, role: &str, options: Option<GetByRoleOptions>) -> ArcResult<Weak<Locator>> {
+    pub(crate) async fn get_by_role(
+        &self,
+        role: &str,
+        options: Option<GetByRoleOptions>,
+    ) -> ArcResult<Weak<Locator>> {
         // Generate selector client-side (like official Playwright clients)
         let selector = build_role_selector(role, options.as_ref());
-        
+
         // Use existing working locator method instead of direct protocol call
         self.locator(&selector).await
     }
 
-    pub(crate) async fn get_by_text(&self, text: &str, options: Option<GetByTextOptions>) -> ArcResult<Weak<Locator>> {
+    pub(crate) async fn get_by_text(
+        &self,
+        text: &str,
+        options: Option<GetByTextOptions>,
+    ) -> ArcResult<Weak<Locator>> {
         // Generate selector client-side (like official Playwright clients)
         let selector = build_text_selector(text, options.as_ref());
-        
+
         // Use existing working locator method instead of direct protocol call
         self.locator(&selector).await
     }
 
-    pub(crate) async fn get_by_label(&self, text: &str, options: Option<GetByLabelOptions>) -> ArcResult<Weak<Locator>> {
+    pub(crate) async fn get_by_label(
+        &self,
+        text: &str,
+        options: Option<GetByLabelOptions>,
+    ) -> ArcResult<Weak<Locator>> {
         // Generate selector client-side (like official Playwright clients)
         let selector = build_label_selector(text, options.as_ref());
-        
+
         // Use existing working locator method instead of direct protocol call
         self.locator(&selector).await
     }
 
-    pub(crate) async fn get_by_placeholder(&self, text: &str, options: Option<GetByPlaceholderOptions>) -> ArcResult<Weak<Locator>> {
+    pub(crate) async fn get_by_placeholder(
+        &self,
+        text: &str,
+        options: Option<GetByPlaceholderOptions>,
+    ) -> ArcResult<Weak<Locator>> {
         // Generate selector client-side (like official Playwright clients)
         let selector = build_placeholder_selector(text, options.as_ref());
-        
+
         // Use existing working locator method instead of direct protocol call
         self.locator(&selector).await
     }
@@ -647,7 +663,7 @@ impl Frame {
     pub(crate) async fn get_by_test_id(&self, test_id: &str) -> ArcResult<Weak<Locator>> {
         // Generate selector client-side (like official Playwright clients)
         let selector = build_test_id_selector(test_id);
-        
+
         // Use existing working locator method instead of direct protocol call
         self.locator(&selector).await
     }
@@ -829,7 +845,7 @@ impl<'a> ClickArgs<'a> {
             position: None,
             delay: None,
             button: None,
-            /// Is ignored if dblclick
+            // Is ignored if dblclick
             click_count: None,
             timeout: None,
             force: None,

@@ -90,7 +90,10 @@ async fn test_locator_get_by_methods() -> Result<(), playwright::Error> {
     assert!(by_label.selector()?.contains("internal:label"));
 
     let by_placeholder = page.get_by_placeholder("Enter your name").await?;
-    assert!(by_placeholder.selector()?.contains("internal:attr") && by_placeholder.selector()?.contains("placeholder"));
+    assert!(
+        by_placeholder.selector()?.contains("internal:attr")
+            && by_placeholder.selector()?.contains("placeholder")
+    );
 
     let by_test_id = page.get_by_test_id("result").await?;
     assert!(by_test_id.selector()?.contains("internal:testid"));
@@ -321,7 +324,6 @@ async fn test_locator_phase2_methods() -> Result<(), playwright::Error> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
 
     #[tokio::test]
     async fn test_locator_selector_generation() {

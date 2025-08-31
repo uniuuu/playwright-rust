@@ -121,7 +121,7 @@ impl Locator {
         upgrade(&self.inner)?
             .text_content(timeout)
             .await
-            .map_err(|e| Error::ObjectNotFound)
+            .map_err(|_e| Error::ObjectNotFound)
     }
 
     /// Get the inner text of the element.

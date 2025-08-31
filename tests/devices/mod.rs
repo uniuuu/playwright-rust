@@ -22,7 +22,7 @@ pub async fn all(playwright: &Playwright, port: u16, _which: Which) {
     assert!((device_pixel_ratio(&page).await - 3.0).abs() < f64::EPSILON);
     assert!(has_touch(&page).await);
     // TODO: is_mobile
-    let tmp_dir = tempdir::TempDir::new("playwright-rust").unwrap();
+    let tmp_dir = tempfile::TempDir::new().unwrap();
     dbg!(&tmp_dir);
     chromium
         .persistent_context_launcher(tmp_dir.path())

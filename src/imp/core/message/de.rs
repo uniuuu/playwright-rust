@@ -54,7 +54,7 @@ where
 
 macro_rules! int {
     ($t:ty, $base:ty) => {
-        paste::paste! {
+        pastey::paste! {
             fn [<deserialize_$t>]<V>(self, visitor: V) -> Result<V::Value, Self::Error>
             where
                 V: Visitor<'de>
@@ -271,7 +271,7 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
                 _ => None,
             });
         let n2 = v.as_null();
-        let _ = n1.or(n2).ok_or(Error::TypeMismatch)?;
+        n1.or(n2).ok_or(Error::TypeMismatch)?;
         visitor.visit_unit()
     }
 
@@ -536,7 +536,7 @@ struct KeyDeserializer<'a, 'de: 'a> {
 
 macro_rules! key_int {
     ($t:ty, $base:ty) => {
-        paste::paste! {
+        pastey::paste! {
             fn [<deserialize_$t>]<V>(self, visitor: V) -> Result<V::Value, Self::Error>
             where
                 V: Visitor<'de>

@@ -16,10 +16,7 @@ pub struct Playwright {
 fn run(driver: &Driver, args: &'static [&'static str]) -> io::Result<()> {
     let status = Command::new(driver.executable()).args(args).status()?;
     if !status.success() {
-        return Err(io::Error::new(
-            io::ErrorKind::Other,
-            format!("Exit with {}", status),
-        ));
+        return Err(io::Error::other(format!("Exit with {}", status)));
     }
     Ok(())
 }

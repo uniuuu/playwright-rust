@@ -5,7 +5,7 @@ use crate::imp::{
     prelude::*,
     utils::{KeyboardModifier, MouseButton, Position},
 };
-use serde_json::{map::Map, value::Value};
+use serde_json::map::Map;
 
 #[derive(Debug)]
 pub(crate) struct Locator {
@@ -140,7 +140,10 @@ impl Locator {
     pub(crate) async fn press(&self, key: &str, args: PressArgs) -> Result<(), Arc<Error>> {
         if let Some(frame) = self.frame.upgrade() {
             // Use ElementHandle-based approach via querySelector since Frame's press method signature is unclear
-            let element = frame.query_selector(&self.selector).await.map_err(Arc::from)?;
+            let element = frame
+                .query_selector(&self.selector)
+                .await
+                .map_err(Arc::from)?;
             if let Some(element) = element {
                 if let Some(element) = element.upgrade() {
                     let mut press_args = crate::imp::element_handle::PressArgs::new(key);
@@ -165,7 +168,7 @@ impl Locator {
             frame_args.files = args.files;
             frame_args.timeout = args.timeout;
             frame_args.no_wait_after = args.no_wait_after;
-            frame.set_input_files(frame_args).await.map_err(|e| e.into())
+            frame.set_input_files(frame_args).await.map_err(|e| e)
         } else {
             Err(Arc::new(crate::Error::ObjectNotFound))
         }
@@ -173,7 +176,7 @@ impl Locator {
 
     pub(crate) async fn focus(&self, timeout: Option<f64>) -> Result<(), Arc<Error>> {
         if let Some(frame) = self.frame.upgrade() {
-            frame.focus(&self.selector, timeout).await.map_err(|e| e.into())
+            frame.focus(&self.selector, timeout).await.map_err(|e| e)
         } else {
             Err(Arc::new(crate::Error::ObjectNotFound))
         }
@@ -199,7 +202,10 @@ impl Locator {
     pub(crate) async fn r#type(&self, text: &str, args: TypeArgs) -> Result<(), Arc<Error>> {
         if let Some(frame) = self.frame.upgrade() {
             // Use ElementHandle-based approach via querySelector
-            let element = frame.query_selector(&self.selector).await.map_err(Arc::from)?;
+            let element = frame
+                .query_selector(&self.selector)
+                .await
+                .map_err(Arc::from)?;
             if let Some(element) = element {
                 if let Some(element) = element.upgrade() {
                     let mut type_args = crate::imp::element_handle::TypeArgs::new(text);
@@ -224,23 +230,35 @@ impl Locator {
     ) -> Result<Vec<String>, Arc<Error>> {
         if let Some(frame) = self.frame.upgrade() {
             let mut frame_args = crate::imp::frame::SelectOptionArgs::new(&self.selector);
-            
+
             // Convert Locator args to Frame args
             let mut options = Vec::new();
             if let Some(values) = args.values {
-                options.extend(values.into_iter().map(crate::imp::element_handle::Opt::Value));
+                options.extend(
+                    values
+                        .into_iter()
+                        .map(crate::imp::element_handle::Opt::Value),
+                );
             }
             if let Some(labels) = args.labels {
-                options.extend(labels.into_iter().map(crate::imp::element_handle::Opt::Label));
+                options.extend(
+                    labels
+                        .into_iter()
+                        .map(crate::imp::element_handle::Opt::Label),
+                );
             }
             if let Some(indices) = args.indices {
-                options.extend(indices.into_iter().map(|i| crate::imp::element_handle::Opt::Index(i as usize)));
+                options.extend(
+                    indices
+                        .into_iter()
+                        .map(|i| crate::imp::element_handle::Opt::Index(i as usize)),
+                );
             }
-            
+
             if !options.is_empty() {
                 frame_args.options = Some(options);
             }
-            
+
             frame_args.timeout = args.timeout;
             frame_args.no_wait_after = args.no_wait_after;
             frame.select_option(frame_args).await.map_err(Arc::from)
@@ -255,7 +273,10 @@ impl Locator {
         timeout: Option<f64>,
     ) -> Result<Option<String>, Arc<Error>> {
         if let Some(frame) = self.frame.upgrade() {
-            frame.text_content(&self.selector, timeout).await.map_err(Arc::from)
+            frame
+                .text_content(&self.selector, timeout)
+                .await
+                .map_err(Arc::from)
         } else {
             Err(Arc::new(crate::Error::ObjectNotFound))
         }
@@ -263,7 +284,10 @@ impl Locator {
 
     pub(crate) async fn inner_text(&self, timeout: Option<f64>) -> Result<String, Arc<Error>> {
         if let Some(frame) = self.frame.upgrade() {
-            frame.inner_text(&self.selector, timeout).await.map_err(Arc::from)
+            frame
+                .inner_text(&self.selector, timeout)
+                .await
+                .map_err(Arc::from)
         } else {
             Err(Arc::new(crate::Error::ObjectNotFound))
         }
@@ -271,7 +295,10 @@ impl Locator {
 
     pub(crate) async fn inner_html(&self, timeout: Option<f64>) -> Result<String, Arc<Error>> {
         if let Some(frame) = self.frame.upgrade() {
-            frame.inner_html(&self.selector, timeout).await.map_err(Arc::from)
+            frame
+                .inner_html(&self.selector, timeout)
+                .await
+                .map_err(Arc::from)
         } else {
             Err(Arc::new(crate::Error::ObjectNotFound))
         }
@@ -283,7 +310,10 @@ impl Locator {
         timeout: Option<f64>,
     ) -> Result<Option<String>, Arc<Error>> {
         if let Some(frame) = self.frame.upgrade() {
-            frame.get_attribute(&self.selector, name, timeout).await.map_err(Arc::from)
+            frame
+                .get_attribute(&self.selector, name, timeout)
+                .await
+                .map_err(Arc::from)
         } else {
             Err(Arc::new(crate::Error::ObjectNotFound))
         }
@@ -311,7 +341,10 @@ impl Locator {
     // State methods
     pub(crate) async fn is_visible(&self, timeout: Option<f64>) -> Result<bool, Arc<Error>> {
         if let Some(frame) = self.frame.upgrade() {
-            frame.is_visible(&self.selector, timeout).await.map_err(Arc::from)
+            frame
+                .is_visible(&self.selector, timeout)
+                .await
+                .map_err(Arc::from)
         } else {
             Err(Arc::new(crate::Error::ObjectNotFound))
         }
@@ -319,7 +352,10 @@ impl Locator {
 
     pub(crate) async fn is_hidden(&self, timeout: Option<f64>) -> Result<bool, Arc<Error>> {
         if let Some(frame) = self.frame.upgrade() {
-            frame.is_hidden(&self.selector, timeout).await.map_err(Arc::from)
+            frame
+                .is_hidden(&self.selector, timeout)
+                .await
+                .map_err(Arc::from)
         } else {
             Err(Arc::new(crate::Error::ObjectNotFound))
         }
@@ -327,7 +363,10 @@ impl Locator {
 
     pub(crate) async fn is_enabled(&self, timeout: Option<f64>) -> Result<bool, Arc<Error>> {
         if let Some(frame) = self.frame.upgrade() {
-            frame.is_enabled(&self.selector, timeout).await.map_err(Arc::from)
+            frame
+                .is_enabled(&self.selector, timeout)
+                .await
+                .map_err(Arc::from)
         } else {
             Err(Arc::new(crate::Error::ObjectNotFound))
         }
@@ -335,7 +374,10 @@ impl Locator {
 
     pub(crate) async fn is_disabled(&self, timeout: Option<f64>) -> Result<bool, Arc<Error>> {
         if let Some(frame) = self.frame.upgrade() {
-            frame.is_disabled(&self.selector, timeout).await.map_err(Arc::from)
+            frame
+                .is_disabled(&self.selector, timeout)
+                .await
+                .map_err(Arc::from)
         } else {
             Err(Arc::new(crate::Error::ObjectNotFound))
         }
@@ -343,7 +385,10 @@ impl Locator {
 
     pub(crate) async fn is_checked(&self, timeout: Option<f64>) -> Result<bool, Arc<Error>> {
         if let Some(frame) = self.frame.upgrade() {
-            frame.is_checked(&self.selector, timeout).await.map_err(Arc::from)
+            frame
+                .is_checked(&self.selector, timeout)
+                .await
+                .map_err(Arc::from)
         } else {
             Err(Arc::new(crate::Error::ObjectNotFound))
         }
@@ -351,7 +396,10 @@ impl Locator {
 
     pub(crate) async fn is_editable(&self, timeout: Option<f64>) -> Result<bool, Arc<Error>> {
         if let Some(frame) = self.frame.upgrade() {
-            frame.is_editable(&self.selector, timeout).await.map_err(Arc::from)
+            frame
+                .is_editable(&self.selector, timeout)
+                .await
+                .map_err(Arc::from)
         } else {
             Err(Arc::new(crate::Error::ObjectNotFound))
         }
@@ -396,11 +444,15 @@ impl Locator {
 // Only implement RemoteObject for server-side locators
 impl RemoteObject for Locator {
     fn channel(&self) -> &ChannelOwner {
-        self.channel.as_ref().expect("RemoteObject methods should only be called on server-side locators")
+        self.channel
+            .as_ref()
+            .expect("RemoteObject methods should only be called on server-side locators")
     }
 
     fn channel_mut(&mut self) -> &mut ChannelOwner {
-        self.channel.as_mut().expect("RemoteObject methods should only be called on server-side locators")
+        self.channel
+            .as_mut()
+            .expect("RemoteObject methods should only be called on server-side locators")
     }
 }
 

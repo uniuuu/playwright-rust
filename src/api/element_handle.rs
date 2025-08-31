@@ -559,7 +559,7 @@ impl TapBuilder {
 
     pub async fn tap(self) -> Result<(), Arc<Error>> {
         let Self { inner, args } = self;
-        let _ = upgrade(&inner)?.tap(args).await?;
+        upgrade(&inner)?.tap(args).await?;
         Ok(())
     }
 
@@ -596,7 +596,7 @@ impl<'a> FillBuilder<'a> {
 
     pub async fn fill(self) -> Result<(), Arc<Error>> {
         let Self { inner, args } = self;
-        let _ = upgrade(&inner)?.fill(args).await?;
+        upgrade(&inner)?.fill(args).await?;
         Ok(())
     }
 

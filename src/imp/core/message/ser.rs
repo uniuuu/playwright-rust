@@ -548,7 +548,7 @@ impl<'a> ser::SerializeMap for &'a mut ObjectM {
         let mut vs = Vec::new();
         mem::swap(&mut self.keys, &mut ks);
         mem::swap(&mut self.values, &mut vs);
-        let entries = ks.into_iter().zip(vs.into_iter());
+        let entries = ks.into_iter().zip(vs);
         let o = convert_kv(entries);
         Ok(o.into())
     }

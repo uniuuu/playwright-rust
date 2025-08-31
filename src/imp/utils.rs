@@ -1,4 +1,5 @@
 use crate::imp::prelude::*;
+use base64::Engine;
 
 #[derive(Debug, Deserialize, Clone, Serialize, PartialEq, Eq)]
 pub struct Viewport {
@@ -245,7 +246,7 @@ pub struct File {
 
 impl File {
     pub fn new(name: String, mime: String, body: &[u8]) -> Self {
-        let buffer = base64::encode(body);
+        let buffer = base64::engine::general_purpose::STANDARD.encode(body);
         Self { name, mime, buffer }
     }
 }

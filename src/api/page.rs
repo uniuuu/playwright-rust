@@ -12,8 +12,8 @@ pub use crate::{
 };
 use crate::{
     api::{
-        input_device::*, Accessibility, BrowserContext, ConsoleMessage, ElementHandle, FileChooser,
-        Frame, Keyboard, Locator, Response, TouchScreen, Video, WebSocket, Worker,
+        input_device::*, Accessibility, BrowserContext, ConsoleMessage, ElementHandle, Frame,
+        Keyboard, Locator, Response, TouchScreen, Video, WebSocket, Worker,
     },
     imp::{
         core::*,
