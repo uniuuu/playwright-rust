@@ -24,11 +24,13 @@ use crate::imp::{core::*, dialog::Dialog as Impl, prelude::*};
 /// [freeze](https://developer.mozilla.org/en-US/docs/Web/JavaScript/EventLoop#never_blocking) waiting for the dialog, and
 /// actions like click will never finish.
 pub struct Dialog {
-    inner: Weak<Impl>
+    inner: Weak<Impl>,
 }
 
 impl Dialog {
-    pub(crate) fn new(inner: Weak<Impl>) -> Self { Self { inner } }
+    pub(crate) fn new(inner: Weak<Impl>) -> Self {
+        Self { inner }
+    }
 
     ///// Returns when the dialog has been accepted.
     ///// A text to enter in prompt. Does not cause any effects if the dialog's `type` is not prompt. Optional.

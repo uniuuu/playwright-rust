@@ -32,12 +32,12 @@ macro_rules! subscribe_event {
     () => {
         // TODO: FusedStream + Sink
         pub fn subscribe_event(
-            &self
+            &self,
         ) -> Result<
             impl futures::stream::Stream<
-                Item = Result<Event, tokio_stream::wrappers::errors::BroadcastStreamRecvError>
+                Item = Result<Event, tokio_stream::wrappers::errors::BroadcastStreamRecvError>,
             >,
-            Error
+            Error,
         > {
             use futures::stream::StreamExt;
             use tokio_stream::wrappers::BroadcastStream;

@@ -6,11 +6,11 @@ use crate::{
         frame::{
             AddScriptTagArgs, CheckArgs, ClickArgs, Evt, FillArgs, Frame as Impl, GotoArgs,
             HoverArgs, Opt, PressArgs, SelectOptionArgs, SetContentArgs, SetInputFilesArgs,
-            TapArgs, TypeArgs, WaitForFunctionArgs, WaitForSelectorArgs
+            TapArgs, TypeArgs, WaitForFunctionArgs, WaitForSelectorArgs,
         },
         prelude::*,
-        utils::{DocumentLoadState, File, KeyboardModifier, MouseButton, Position}
-    }
+        utils::{DocumentLoadState, File, KeyboardModifier, MouseButton, Position},
+    },
 };
 
 /// At every point of time, page exposes its current frame tree via the [`method: Page.mainFrame`] and
@@ -45,7 +45,7 @@ use crate::{
 /// ```
 #[derive(Clone)]
 pub struct Frame {
-    inner: Weak<Impl>
+    inner: Weak<Impl>,
 }
 
 impl PartialEq for Frame {
@@ -67,16 +67,22 @@ macro_rules! is_checked {
 }
 
 impl Frame {
-    pub(crate) fn new(inner: Weak<Impl>) -> Self { Self { inner } }
+    pub(crate) fn new(inner: Weak<Impl>) -> Self {
+        Self { inner }
+    }
 
-    pub fn url(&self) -> Result<String, Error> { Ok(upgrade(&self.inner)?.url()) }
+    pub fn url(&self) -> Result<String, Error> {
+        Ok(upgrade(&self.inner)?.url())
+    }
 
     /// Returns frame's name attribute as specified in the tag.
     ///
     /// If the name is empty, returns the id attribute instead.
     ///
     /// > NOTE: This value is calculated once when the frame is created, and will not update if the attribute is changed later.
-    pub fn name(&self) -> Result<String, Error> { Ok(upgrade(&self.inner)?.name()) }
+    pub fn name(&self) -> Result<String, Error> {
+        Ok(upgrade(&self.inner)?.name())
+    }
 
     pub fn page(&self) -> Result<Option<Page>, Error> {
         Ok(upgrade(&self.inner)?.page().map(Page::new))
@@ -187,7 +193,7 @@ impl Frame {
     pub async fn text_content(
         &self,
         selector: &str,
-        timeout: Option<f64>
+        timeout: Option<f64>,
     ) -> ArcResult<Option<String>> {
         upgrade(&self.inner)?.text_content(selector, timeout).await
     }
@@ -207,7 +213,7 @@ impl Frame {
         &self,
         selector: &str,
         name: &str,
-        timeout: Option<f64>
+        timeout: Option<f64>,
     ) -> ArcResult<Option<String>> {
         upgrade(&self.inner)?
             .get_attribute(selector, name, timeout)
@@ -240,7 +246,7 @@ impl Frame {
     /// ```
     pub async fn frame_element(&self) -> ArcResult<ElementHandle> {
         Ok(ElementHandle::new(
-            upgrade(&self.inner)?.frame_element().await?
+            upgrade(&self.inner)?.frame_element().await?,
         ))
     }
 
@@ -274,69 +280,63 @@ impl Frame {
     // Locator methods
 
     /// Create a locator that can be used to perform actions on elements matching the selector.
-    pub fn locator(&self, selector: &str) -> Result<Locator, Error> {
-        use crate::imp::locator::Locator as LocatorImpl;
-        let ctx = upgrade(&self.inner)?.context()?;
-        let locator_impl = LocatorImpl::new_with_selector(
-            self.inner.clone(),
-            selector.to_string(),
-            Arc::downgrade(&ctx),
-        )?;
-        // Store the locator in an Arc to keep it alive
-        use std::sync::Arc;
-        use std::collections::HashMap;
-        static mut LOCATOR_STORAGE: Option<std::sync::Mutex<HashMap<String, Arc<LocatorImpl>>>> = None;
-        static LOCATOR_INIT: std::sync::Once = std::sync::Once::new();
-        
-        LOCATOR_INIT.call_once(|| unsafe {
-            LOCATOR_STORAGE = Some(std::sync::Mutex::new(HashMap::new()));
-        });
-        
-        let locator_arc = Arc::new(locator_impl);
-        let locator_guid = locator_arc.guid().as_str().to_string();
-        let locator_weak = Arc::downgrade(&locator_arc);
-        
-        // Store the Arc to prevent it from being dropped
-        unsafe {
-            if let Some(ref storage) = LOCATOR_STORAGE {
-                storage.lock().unwrap().insert(locator_guid, locator_arc);
-            }
-        }
-        
-        Ok(Locator::new(locator_weak))
+    pub async fn locator(&self, selector: &str) -> Result<Locator, Error> {
+        let locator_impl = upgrade(&self.inner)?
+            .locator(selector)
+            .await
+            .map_err(|_| Error::ObjectNotFound)?;
+        Ok(Locator::new(locator_impl))
     }
 
-    /// Create a locator for elements matching the specified accessibility role and name.
-    pub fn get_by_role(&self, role: &str) -> Result<Locator, Error> {
-        let selector = format!("[role=\"{}\"]", role);
-        self.locator(&selector)
+    /// Create a locator for elements matching the specified accessibility role.
+    pub async fn get_by_role(&self, role: &str) -> Result<Locator, Error> {
+        let frame_impl = upgrade(&self.inner)?;
+        let locator_impl = frame_impl
+            .get_by_role(role, None)
+            .await
+            .map_err(|_| Error::ObjectNotFound)?;
+        Ok(Locator::new(locator_impl))
     }
 
     /// Create a locator for elements containing the specified text.
-    pub fn get_by_text(&self, text: &str) -> Result<Locator, Error> {
-        let selector = format!("text={}", text);
-        self.locator(&selector)
+    pub async fn get_by_text(&self, text: &str) -> Result<Locator, Error> {
+        let locator_impl = upgrade(&self.inner)?
+            .get_by_text(text, None)
+            .await
+            .map_err(|_| Error::ObjectNotFound)?;
+        Ok(Locator::new(locator_impl))
     }
 
-    /// Create a locator for form controls associated with the specified label text.
-    pub fn get_by_label(&self, text: &str) -> Result<Locator, Error> {
-        let selector = format!("label={}", text);
-        self.locator(&selector)
+    /// Create a locator for elements matching the specified label.
+    pub async fn get_by_label(&self, text: &str) -> Result<Locator, Error> {
+        let locator_impl = upgrade(&self.inner)?
+            .get_by_label(text, None)
+            .await
+            .map_err(|_| Error::ObjectNotFound)?;
+        Ok(Locator::new(locator_impl))
     }
 
-    /// Create a locator for input elements with the specified placeholder text.
-    pub fn get_by_placeholder(&self, text: &str) -> Result<Locator, Error> {
-        let selector = format!("[placeholder=\"{}\"]", text);
-        self.locator(&selector)
+    /// Create a locator for elements matching the specified placeholder.
+    pub async fn get_by_placeholder(&self, text: &str) -> Result<Locator, Error> {
+        let locator_impl = upgrade(&self.inner)?
+            .get_by_placeholder(text, None)
+            .await
+            .map_err(|_| Error::ObjectNotFound)?;
+        Ok(Locator::new(locator_impl))
     }
 
-    /// Create a locator for elements with the specified test id attribute.
-    pub fn get_by_test_id(&self, test_id: &str) -> Result<Locator, Error> {
-        let selector = format!("[data-testid=\"{}\"]", test_id);
-        self.locator(&selector)
+    /// Create a locator for elements matching the specified test ID.
+    pub async fn get_by_test_id(&self, test_id: &str) -> Result<Locator, Error> {
+        let locator_impl = upgrade(&self.inner)?
+            .get_by_test_id(test_id)
+            .await
+            .map_err(|_| Error::ObjectNotFound)?;
+        Ok(Locator::new(locator_impl))
     }
 
-    pub async fn title(&self) -> ArcResult<String> { upgrade(&self.inner)?.title().await }
+    pub async fn title(&self) -> ArcResult<String> {
+        upgrade(&self.inner)?.title().await
+    }
 
     /// Sends a `keydown`, `keypress`/`input`, and `keyup` event for each character in the text. `frame.type` can be used to
     /// send fine-grained keyboard events. To fill values in form fields, use [`method: Frame.fill`].
@@ -393,7 +393,9 @@ impl Frame {
     is_checked! {is_visible}
 
     /// Gets the full HTML contents of the frame, including the doctype.
-    pub async fn content<'a>(&self) -> ArcResult<String> { upgrade(&self.inner)?.content().await }
+    pub async fn content<'a>(&self) -> ArcResult<String> {
+        upgrade(&self.inner)?.content().await
+    }
 
     pub fn set_content_builder<'a>(&self, html: &'a str) -> SetContentBuilder<'a> {
         SetContentBuilder::new(self.inner.clone(), html)
@@ -445,7 +447,7 @@ impl Frame {
     pub async fn add_style_tag(
         &self,
         content: &str,
-        url: Option<&str>
+        url: Option<&str>,
     ) -> ArcResult<ElementHandle> {
         upgrade(&self.inner)?
             .add_style_tag(content, url)
@@ -463,10 +465,10 @@ impl Frame {
     pub async fn evaluate_element_handle<T>(
         &self,
         expression: &str,
-        args: Option<T>
+        args: Option<T>,
     ) -> ArcResult<ElementHandle>
     where
-        T: Serialize
+        T: Serialize,
     {
         upgrade(&self.inner)?
             .evaluate_element_handle(expression, args)
@@ -502,10 +504,10 @@ impl Frame {
     pub async fn evaluate_js_handle<T>(
         &self,
         expression: &str,
-        arg: Option<T>
+        arg: Option<T>,
     ) -> ArcResult<JsHandle>
     where
-        T: Serialize
+        T: Serialize,
     {
         upgrade(&self.inner)?
             .evaluate_js_handle(expression, arg)
@@ -515,7 +517,7 @@ impl Frame {
 
     pub async fn eval<U>(&self, expression: &str) -> ArcResult<U>
     where
-        U: DeserializeOwned
+        U: DeserializeOwned,
     {
         upgrade(&self.inner)?.eval(expression).await
     }
@@ -546,7 +548,7 @@ impl Frame {
     pub async fn evaluate<T, U>(&self, expression: &str, arg: T) -> ArcResult<U>
     where
         T: Serialize,
-        U: DeserializeOwned
+        U: DeserializeOwned,
     {
         upgrade(&self.inner)?.evaluate(expression, Some(arg)).await
     }
@@ -571,11 +573,11 @@ impl Frame {
         &self,
         selector: &str,
         expression: &str,
-        arg: Option<T>
+        arg: Option<T>,
     ) -> ArcResult<U>
     where
         T: Serialize,
-        U: DeserializeOwned
+        U: DeserializeOwned,
     {
         upgrade(&self.inner)?
             .evaluate_on_selector(selector, expression, arg)
@@ -599,11 +601,11 @@ impl Frame {
         &self,
         selector: &str,
         expression: &str,
-        arg: Option<T>
+        arg: Option<T>,
     ) -> ArcResult<U>
     where
         T: Serialize,
-        U: DeserializeOwned
+        U: DeserializeOwned,
     {
         upgrade(&self.inner)?
             .evaluate_on_selector_all(selector, expression, arg)
@@ -641,10 +643,10 @@ impl Frame {
         &self,
         selector: &str,
         r#type: &str,
-        event_init: Option<T>
+        event_init: Option<T>,
     ) -> ArcResult<()>
     where
-        T: Serialize
+        T: Serialize,
     {
         // timeout not supported
         upgrade(&self.inner)?
@@ -683,7 +685,7 @@ impl Frame {
     pub fn set_input_files_builder<'a>(
         &self,
         selector: &'a str,
-        file: File
+        file: File,
     ) -> SetInputFilesBuilder<'a> {
         SetInputFilesBuilder::new(self.inner.clone(), selector, file)
     }
@@ -716,21 +718,21 @@ impl Frame {
 #[derive(Debug)]
 pub enum Event {
     LoadState(DocumentLoadState),
-    Navigated(FrameNavigatedEvent)
+    Navigated(FrameNavigatedEvent),
 }
 
 impl From<Evt> for Event {
     fn from(e: Evt) -> Self {
         match e {
             Evt::LoadState(x) => Self::LoadState(x),
-            Evt::Navigated(x) => Self::Navigated(x)
+            Evt::Navigated(x) => Self::Navigated(x),
         }
     }
 }
 
 pub struct GotoBuilder<'a, 'b> {
     inner: Weak<Impl>,
-    args: GotoArgs<'a, 'b>
+    args: GotoArgs<'a, 'b>,
 }
 
 impl<'a, 'b> GotoBuilder<'a, 'b> {
@@ -758,7 +760,7 @@ macro_rules! clicker {
     ($t: ident, $f: ident) => {
         pub struct $t<'a> {
             inner: Weak<Impl>,
-            args: ClickArgs<'a>
+            args: ClickArgs<'a>,
         }
 
         impl<'a> $t<'a> {
@@ -806,7 +808,7 @@ clicker!(DblClickBuilder, dblclick);
 
 pub struct WaitForSelectorBuilder<'a> {
     inner: Weak<Impl>,
-    args: WaitForSelectorArgs<'a>
+    args: WaitForSelectorArgs<'a>,
 }
 
 impl<'a> WaitForSelectorBuilder<'a> {
@@ -832,7 +834,7 @@ macro_rules! type_builder {
     ($t: ident, $a: ident, $f: ident, $m: ident) => {
         pub struct $t<'a, 'b> {
             inner: Weak<Impl>,
-            args: $a<'a, 'b>
+            args: $a<'a, 'b>,
         }
 
         impl<'a, 'b> $t<'a, 'b> {
@@ -865,7 +867,7 @@ type_builder!(PressBuilder, PressArgs, key, press);
 
 pub struct HoverBuilder<'a> {
     inner: Weak<Impl>,
-    args: HoverArgs<'a>
+    args: HoverArgs<'a>,
 }
 
 impl<'a> HoverBuilder<'a> {
@@ -897,7 +899,7 @@ impl<'a> HoverBuilder<'a> {
 
 pub struct SetContentBuilder<'a> {
     inner: Weak<Impl>,
-    args: SetContentArgs<'a>
+    args: SetContentArgs<'a>,
 }
 
 impl<'a> SetContentBuilder<'a> {
@@ -919,7 +921,7 @@ impl<'a> SetContentBuilder<'a> {
 
 pub struct TapBuilder<'a> {
     inner: Weak<Impl>,
-    args: TapArgs<'a>
+    args: TapArgs<'a>,
 }
 
 impl<'a> TapBuilder<'a> {
@@ -956,7 +958,7 @@ impl<'a> TapBuilder<'a> {
 
 pub struct FillBuilder<'a, 'b> {
     inner: Weak<Impl>,
-    args: FillArgs<'a, 'b>
+    args: FillArgs<'a, 'b>,
 }
 
 impl<'a, 'b> FillBuilder<'a, 'b> {
@@ -984,7 +986,7 @@ macro_rules! check_builder {
     ($t: ident, $m: ident) => {
         pub struct $t<'a> {
             inner: Weak<Impl>,
-            args: CheckArgs<'a>
+            args: CheckArgs<'a>,
         }
 
         impl<'a> $t<'a> {
@@ -1022,7 +1024,7 @@ check_builder!(UncheckBuilder, uncheck);
 
 pub struct AddScriptTagBuilder<'a, 'b, 'c> {
     inner: Weak<Impl>,
-    args: AddScriptTagArgs<'a, 'b, 'c>
+    args: AddScriptTagArgs<'a, 'b, 'c>,
 }
 
 impl<'a, 'b, 'c> AddScriptTagBuilder<'a, 'b, 'c> {
@@ -1060,7 +1062,7 @@ impl<'a, 'b, 'c> AddScriptTagBuilder<'a, 'b, 'c> {
 pub struct SelectOptionBuilder<'a> {
     inner: Weak<Impl>,
     args: SelectOptionArgs<'a>,
-    err: Option<Error>
+    err: Option<Error>,
 }
 
 impl<'a> SelectOptionBuilder<'a> {
@@ -1069,7 +1071,7 @@ impl<'a> SelectOptionBuilder<'a> {
         Self {
             inner,
             args,
-            err: None
+            err: None,
         }
     }
 
@@ -1151,7 +1153,7 @@ impl<'a> SelectOptionBuilder<'a> {
 
 pub struct SetInputFilesBuilder<'a> {
     inner: Weak<Impl>,
-    args: SetInputFilesArgs<'a>
+    args: SetInputFilesArgs<'a>,
 }
 
 impl<'a> SetInputFilesBuilder<'a> {
@@ -1188,7 +1190,7 @@ impl<'a> SetInputFilesBuilder<'a> {
 pub struct WaitForFunctionBuilder<'a> {
     inner: Weak<Impl>,
     args: WaitForFunctionArgs<'a>,
-    err: Option<Error>
+    err: Option<Error>,
 }
 
 impl<'a> WaitForFunctionBuilder<'a> {
@@ -1197,7 +1199,7 @@ impl<'a> WaitForFunctionBuilder<'a> {
         Self {
             inner,
             args,
-            err: None
+            err: None,
         }
     }
 
@@ -1214,14 +1216,14 @@ impl<'a> WaitForFunctionBuilder<'a> {
 
     pub fn arg<T>(mut self, x: &T) -> Self
     where
-        T: Serialize
+        T: Serialize,
     {
         let arg = match ser::to_value(x).map_err(Error::SerializationPwJson) {
             Err(e) => {
                 self.err = Some(e);
                 return self;
             }
-            Ok(arg) => arg
+            Ok(arg) => arg,
         };
         self.args.arg = Some(arg);
         self

@@ -5,7 +5,7 @@ pub(crate) mod prelude {
     pub use serde::{de::DeserializeOwned, Deserialize, Serialize};
     pub use serde_json::{
         map::Map,
-        value::{to_value, Value}
+        value::{to_value, Value},
     };
     pub use std::{
         collections::HashMap,
@@ -15,7 +15,7 @@ pub(crate) mod prelude {
         pin::Pin,
         sync::{Arc, Mutex, MutexGuard, Weak},
         task::{Poll, Waker},
-        time::Duration
+        time::Duration,
     };
     pub use strong::*;
     pub type Wm<T> = Weak<Mutex<T>>;
@@ -40,11 +40,11 @@ pub(crate) mod prelude {
     impl<T> RemoveOne<T> for Vec<T> {
         fn remove_one<F>(&mut self, f: F)
         where
-            F: Fn(&T) -> bool
+            F: Fn(&T) -> bool,
         {
             let index = match self.iter().position(f) {
                 Some(i) => i,
-                None => return
+                None => return,
             };
             self.remove(index);
         }
@@ -59,7 +59,7 @@ mod macros {
         ($c:expr, $guid:expr, $t:ident) => {
             match $c.find_object($guid) {
                 Some(RemoteWeak::$t(x)) => Ok(x),
-                _ => Err(Error::ObjectNotFound)
+                _ => Err(Error::ObjectNotFound),
             }
         };
     }

@@ -83,7 +83,7 @@ async fn ensure_close(page: &Page) {
     assert!(received);
     match wait_result.unwrap() {
         page::Event::Close => (),
-        _ => unreachable!()
+        _ => unreachable!(),
     }
 }
 
@@ -181,7 +181,7 @@ async fn workers_should_work(c: &BrowserContext, port: u16, which: Which) {
         w.url().unwrap(),
         match which {
             Which::Firefox => "worker.js".to_owned(),
-            _ => js
+            _ => js,
         }
     );
     assert_eq!(
@@ -199,7 +199,7 @@ async fn ensure_timeout(page: &Page) {
     page.set_default_timeout(500).await.unwrap();
     match page.expect_event(page::EventType::Load).await {
         Err(playwright::Error::Timeout) => {}
-        _ => panic!("Not expected")
+        _ => panic!("Not expected"),
     }
 }
 
@@ -236,7 +236,7 @@ async fn permissions(c: &BrowserContext, page: &Page, port: u16, which: Which) {
     c.set_geolocation(Some(&Geolocation {
         latitude: 59.95,
         longitude: 2.,
-        accuracy: None
+        accuracy: None,
     }))
     .await
     .unwrap();
@@ -248,7 +248,7 @@ async fn permissions(c: &BrowserContext, page: &Page, port: u16, which: Which) {
 async fn get_permission(p: &Page, name: &str) -> String {
     p.evaluate(
         "name => navigator.permissions.query({name}).then(result => result.state)",
-        name
+        name,
     )
     .await
     .unwrap()
@@ -258,7 +258,7 @@ async fn viewport(c: &BrowserContext) {
     let p = new(c).await;
     let v = Viewport {
         width: 500,
-        height: 500
+        height: 500,
     };
     dbg!(p.viewport_size().unwrap());
     p.set_viewport_size(v.clone()).await.unwrap();
@@ -281,7 +281,7 @@ async fn download(c: &BrowserContext, port: u16) {
     );
     let download = match d.unwrap() {
         page::Event::Download(d) => d,
-        _ => unreachable!()
+        _ => unreachable!(),
     };
     dbg!(download.url());
     dbg!(download.suggested_filename());
@@ -314,7 +314,7 @@ async fn accessibility(c: &BrowserContext) {
         r#"<div>\
             <span>Hello World</span>\
             <input placeholder="Empty input" />\
-        </div>"#
+        </div>"#,
     )
     .set_content()
     .await
@@ -355,7 +355,7 @@ async fn accessibility(c: &BrowserContext) {
         haspopup: None,
         invalid: None,
         orientation: None,
-        children: Vec::new()
+        children: Vec::new(),
     });
     assert_eq!(snapshot, input_response);
     let snapshot = ac
@@ -471,7 +471,9 @@ async fn new(c: &BrowserContext) -> Page {
     page
 }
 
-async fn close(p: &Page) { p.close(None).await.unwrap() }
+async fn close(p: &Page) {
+    p.close(None).await.unwrap()
+}
 
 async fn input(c: &BrowserContext) {
     let p = new(c).await;
@@ -503,7 +505,7 @@ async fn set_extra_http_headers(c: &BrowserContext, port: u16) {
     );
     let req = match maybe_request.unwrap() {
         page::Event::Request(req) => req,
-        _ => unreachable!()
+        _ => unreachable!(),
     };
     let headers = req.headers().unwrap();
     assert_eq!(headers.get("foo").unwrap(), "bar"); // set by BrowserContext

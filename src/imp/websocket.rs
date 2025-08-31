@@ -5,12 +5,12 @@ pub(crate) struct WebSocket {
     channel: ChannelOwner,
     url: String,
     var: Mutex<Variable>,
-    tx: Mutex<Option<broadcast::Sender<Evt>>>
+    tx: Mutex<Option<broadcast::Sender<Evt>>>,
 }
 
 #[derive(Debug, Default)]
 struct Variable {
-    is_closed: bool
+    is_closed: bool,
 }
 
 impl WebSocket {
@@ -20,15 +20,19 @@ impl WebSocket {
             channel,
             url,
             var: Mutex::default(),
-            tx: Mutex::default()
+            tx: Mutex::default(),
         })
     }
 
-    pub(crate) fn url(&self) -> &str { &self.url }
+    pub(crate) fn url(&self) -> &str {
+        &self.url
+    }
 }
 
 impl WebSocket {
-    pub(crate) fn is_closed(&self) -> bool { self.var.lock().unwrap().is_closed }
+    pub(crate) fn is_closed(&self) -> bool {
+        self.var.lock().unwrap().is_closed
+    }
 
     fn on_frame_sent(&self, params: Map<String, Value>) -> Result<(), Error> {
         let buffer = parse_frame(params)?;
@@ -47,7 +51,7 @@ fn parse_frame(params: Map<String, Value>) -> Result<Buffer, Error> {
     #[derive(Deserialize)]
     struct De {
         opcode: i32,
-        data: String
+        data: String,
     }
     let De { opcode, data } = serde_json::from_value(params.into())?;
     let buffer = if opcode == 2 {
@@ -60,14 +64,18 @@ fn parse_frame(params: Map<String, Value>) -> Result<Buffer, Error> {
 }
 
 impl RemoteObject for WebSocket {
-    fn channel(&self) -> &ChannelOwner { &self.channel }
-    fn channel_mut(&mut self) -> &mut ChannelOwner { &mut self.channel }
+    fn channel(&self) -> &ChannelOwner {
+        &self.channel
+    }
+    fn channel_mut(&mut self) -> &mut ChannelOwner {
+        &mut self.channel
+    }
 
     fn handle_event(
         &self,
         _ctx: &Context,
         method: Str<Method>,
-        params: Map<String, Value>
+        params: Map<String, Value>,
     ) -> Result<(), Error> {
         match method.as_str() {
             "framesent" => self.on_frame_sent(params)?,
@@ -91,21 +99,25 @@ pub(crate) enum Evt {
     FrameSent(Buffer),
     FrameReceived(Buffer),
     Error(Value),
-    Close
+    Close,
 }
 
 #[derive(Debug, Clone)]
 pub enum Buffer {
     Bytes(Vec<u8>),
-    String(String)
+    String(String),
 }
 
 impl EventEmitter for WebSocket {
     type Event = Evt;
 
-    fn tx(&self) -> Option<broadcast::Sender<Self::Event>> { self.tx.lock().unwrap().clone() }
+    fn tx(&self) -> Option<broadcast::Sender<Self::Event>> {
+        self.tx.lock().unwrap().clone()
+    }
 
-    fn set_tx(&self, tx: broadcast::Sender<Self::Event>) { *self.tx.lock().unwrap() = Some(tx); }
+    fn set_tx(&self, tx: broadcast::Sender<Self::Event>) {
+        *self.tx.lock().unwrap() = Some(tx);
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -113,7 +125,7 @@ pub enum EventType {
     FrameSent,
     FrameReceived,
     Error,
-    Close
+    Close,
 }
 
 impl IsEvent for Evt {
@@ -124,7 +136,7 @@ impl IsEvent for Evt {
             Evt::FrameSent(_) => EventType::FrameSent,
             Evt::FrameReceived(_) => EventType::FrameReceived,
             Evt::Error(_) => EventType::Error,
-            Evt::Close => EventType::Close
+            Evt::Close => EventType::Close,
         }
     }
 }
@@ -132,5 +144,5 @@ impl IsEvent for Evt {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct Initializer {
-    url: String
+    url: String,
 }

@@ -7,14 +7,14 @@ use crate::{
         core::*,
         playwright::DeviceDescriptor,
         prelude::*,
-        utils::{ColorScheme, Geolocation, HttpCredentials, ProxySettings, StorageState, Viewport}
+        utils::{ColorScheme, Geolocation, HttpCredentials, ProxySettings, StorageState, Viewport},
     },
-    Error
+    Error,
 };
 
 #[derive(Debug)]
 pub struct Browser {
-    inner: Weak<imp::browser::Browser>
+    inner: Weak<imp::browser::Browser>,
 }
 
 impl PartialEq for Browser {
@@ -28,7 +28,9 @@ impl PartialEq for Browser {
 }
 
 impl Browser {
-    pub(crate) fn new(inner: Weak<imp::browser::Browser>) -> Self { Self { inner } }
+    pub(crate) fn new(inner: Weak<imp::browser::Browser>) -> Self {
+        Self { inner }
+    }
 
     /// Returns an array of all open browser contexts. In a newly created browser, this will return zero browser contexts.
     ///
@@ -53,7 +55,9 @@ impl Browser {
         Ok(upgrade(&self.inner)?.version().to_owned())
     }
 
-    pub fn exists(&self) -> bool { self.inner.upgrade().is_some() }
+    pub fn exists(&self) -> bool {
+        self.inner.upgrade().is_some()
+    }
 
     /// new_context [`BrowserContext`]
     /// Creates a new browser context. It won't share cookies/cache with other browser contexts.
@@ -66,7 +70,7 @@ impl Browser {
     pub async fn close(&self) -> Result<(), Arc<Error>> {
         let inner = match self.inner.upgrade() {
             None => return Ok(()),
-            Some(inner) => inner
+            Some(inner) => inner,
         };
         inner.close().await
     }
@@ -81,7 +85,7 @@ impl Browser {
 /// [`Browser::context_builder`]
 pub struct ContextBuilder<'e, 'f, 'g, 'h, 'i, 'j, 'k> {
     inner: Weak<imp::browser::Browser>,
-    args: NewContextArgs<'e, 'f, 'g, 'h, 'i, 'j, 'k>
+    args: NewContextArgs<'e, 'f, 'g, 'h, 'i, 'j, 'k>,
 }
 
 impl<'e, 'f, 'g, 'h, 'i, 'j, 'k> ContextBuilder<'e, 'f, 'g, 'h, 'i, 'j, 'k> {
@@ -94,7 +98,7 @@ impl<'e, 'f, 'g, 'h, 'i, 'j, 'k> ContextBuilder<'e, 'f, 'g, 'h, 'i, 'j, 'k> {
     fn new(inner: Weak<imp::browser::Browser>) -> Self {
         Self {
             inner,
-            args: NewContextArgs::default()
+            args: NewContextArgs::default(),
         }
     }
 

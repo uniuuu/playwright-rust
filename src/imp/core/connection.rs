@@ -4,8 +4,8 @@ use std::{
     process::{Child, Command, Stdio},
     sync::{
         atomic::{AtomicBool, Ordering},
-        TryLockError
-    }
+        TryLockError,
+    },
 };
 
 #[derive(Debug)]
@@ -14,7 +14,7 @@ pub(crate) struct Context {
     ctx: Wm<Context>,
     id: i32,
     callbacks: HashMap<i32, WaitPlaces<WaitMessageResult>>,
-    writer: Writer
+    writer: Writer,
 }
 
 #[derive(Debug)]
@@ -22,7 +22,7 @@ pub(crate) struct Connection {
     _child: Child,
     ctx: Am<Context>,
     reader: Am<Reader>,
-    should_stop: Arc<AtomicBool>
+    should_stop: Arc<AtomicBool>,
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -70,7 +70,7 @@ pub enum Error {
     #[error("Timed out")]
     Timeout,
     #[error(transparent)]
-    Join(#[from] JoinError)
+    Join(#[from] JoinError),
 }
 
 pub(crate) type ArcResult<T> = Result<T, Arc<Error>>;
@@ -100,7 +100,7 @@ impl Connection {
             _child: child,
             ctx,
             should_stop: Arc::new(false.into()),
-            reader: Arc::new(Mutex::new(reader))
+            reader: Arc::new(Mutex::new(reader)),
         })
     }
 
@@ -124,22 +124,22 @@ impl Connection {
                     let response = {
                         let r = match r.upgrade() {
                             Some(x) => x,
-                            None => break
+                            None => break,
                         };
                         let mut reader = match r.try_lock() {
                             Ok(x) => x,
                             Err(TryLockError::WouldBlock) => continue,
-                            Err(e) => Err(e).unwrap()
+                            Err(e) => Err(e).unwrap(),
                         };
                         match reader.try_read()? {
                             Some(x) => x,
-                            None => continue
+                            None => continue,
                         }
                     };
                     {
                         let s = match s.upgrade() {
                             Some(x) => x,
-                            None => break
+                            None => break,
                         };
                         let should_stop = s.load(Ordering::Relaxed);
                         if should_stop {
@@ -150,7 +150,7 @@ impl Connection {
                     {
                         let c = match c.upgrade() {
                             Some(x) => x,
-                            None => break
+                            None => break,
                         };
                         let mut ctx = c.lock().unwrap();
                         ctx.dispatch(response)?;
@@ -171,7 +171,9 @@ impl Connection {
         });
     }
 
-    pub(crate) fn context(&self) -> Wm<Context> { Arc::downgrade(&self.ctx) }
+    pub(crate) fn context(&self) -> Wm<Context> {
+        Arc::downgrade(&self.ctx)
+    }
 
     fn notify_closed(&mut self, e: Error) {
         let ctx = &mut self.ctx.lock().unwrap();
@@ -192,7 +194,7 @@ impl Context {
             ctx: Weak::new(),
             id: 0,
             callbacks: HashMap::new(),
-            writer
+            writer,
         };
         let am = Arc::new(Mutex::new(ctx));
         am.lock().unwrap().ctx = Arc::downgrade(&am);
@@ -235,13 +237,13 @@ impl Context {
     fn dispose(&mut self, i: &S<Guid>) {
         let a = match self.objects.get(i) {
             None => return,
-            Some(a) => a
+            Some(a) => a,
         };
         let cs = a.channel().children();
         for c in cs {
             let c = match c.upgrade() {
                 None => continue,
-                Some(c) => c
+                Some(c) => c,
             };
             self.dispose(&c.channel().guid);
         }
@@ -250,21 +252,21 @@ impl Context {
 
     fn respond_wait(
         WaitPlaces { value, waker }: &WaitPlaces<WaitMessageResult>,
-        result: WaitMessageResult
+        result: WaitMessageResult,
     ) {
         let place = match value.upgrade() {
             Some(p) => p,
-            None => return
+            None => return,
         };
         let waker = match waker.upgrade() {
             Some(x) => x,
-            None => return
+            None => return,
         };
         *place.lock().unwrap() = Some(result);
         let waker: &Option<Waker> = &waker.lock().unwrap();
         let waker = match waker {
             Some(x) => x.clone(),
-            None => return
+            None => return,
         };
         waker.wake();
     }
@@ -272,12 +274,12 @@ impl Context {
     fn create_remote_object(
         &mut self,
         parent: &S<Guid>,
-        params: Map<String, Value>
+        params: Map<String, Value>,
     ) -> Result<(), Error> {
         let CreateParams {
             typ,
             guid,
-            initializer
+            initializer,
         } = serde_json::from_value(params.into())?;
         let parent = self.objects.get(parent).ok_or(Error::ObjectNotFound)?;
         let c = ChannelOwner::new(
@@ -285,7 +287,7 @@ impl Context {
             parent.downgrade(),
             typ.to_owned(),
             guid.to_owned(),
-            initializer
+            initializer,
         );
         let r = RemoteArc::try_new(&typ, self, c)?;
         parent.channel().push_child(r.downgrade());
@@ -297,7 +299,7 @@ impl Context {
             RemoteArc::Frame(f) => {
                 f.hook_created(Arc::downgrade(&f))?;
             }
-            _ => ()
+            _ => (),
         }
         Ok(())
     }
@@ -306,7 +308,9 @@ impl Context {
         self.objects.get(k).map(|r| r.downgrade())
     }
 
-    pub(in crate::imp) fn remove_object(&mut self, k: &S<Guid>) { self.objects.remove(k); }
+    pub(in crate::imp) fn remove_object(&mut self, k: &S<Guid>) {
+        self.objects.remove(k);
+    }
 
     pub(in crate::imp::core) fn send_message(&mut self, r: RequestBody) -> Result<(), Error> {
         self.id += 1;
@@ -314,14 +318,14 @@ impl Context {
             guid,
             method,
             params,
-            place
+            place,
         } = r;
         self.callbacks.insert(self.id, place);
         let req = Req {
             guid: &guid,
             method: &method,
             params,
-            id: self.id
+            id: self.id,
         };
         self.writer.send(&req)?;
         Ok(())

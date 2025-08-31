@@ -3,7 +3,7 @@ use std::{
     convert::TryInto,
     io,
     io::{Read, Write},
-    process::{ChildStdin, ChildStdout}
+    process::{ChildStdin, ChildStdout},
 };
 use thiserror::Error;
 
@@ -11,12 +11,12 @@ use thiserror::Error;
 pub(super) struct Reader {
     stdout: ChildStdout,
     length: Option<u32>,
-    buf: Vec<u8>
+    buf: Vec<u8>,
 }
 
 #[derive(Debug)]
 pub(super) struct Writer {
-    stdin: ChildStdin
+    stdin: ChildStdin,
 }
 
 #[derive(Error, Debug)]
@@ -24,7 +24,7 @@ pub enum TransportError {
     #[error(transparent)]
     Serde(#[from] serde_json::error::Error),
     #[error(transparent)]
-    Io(#[from] io::Error)
+    Io(#[from] io::Error),
 }
 
 impl Reader {
@@ -34,7 +34,7 @@ impl Reader {
         Self {
             stdout,
             length: None,
-            buf: Vec::with_capacity(Self::BUFSIZE)
+            buf: Vec::with_capacity(Self::BUFSIZE),
         }
     }
 
@@ -71,7 +71,9 @@ impl Reader {
 }
 
 impl Writer {
-    pub(super) fn new(stdin: ChildStdin) -> Self { Self { stdin } }
+    pub(super) fn new(stdin: ChildStdin) -> Self {
+        Self { stdin }
+    }
 
     pub(super) fn send(&mut self, req: &Req<'_, '_>) -> Result<(), TransportError> {
         log::debug!("SEND {:?}", &req);
