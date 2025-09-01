@@ -251,6 +251,22 @@ impl Locator {
     pub fn filter_builder(&self) -> LocatorFilterBuilder {
         LocatorFilterBuilder::new(self.inner.clone())
     }
+
+    /// Get all matching elements as a vector of locators.
+    /// This creates individual locators for each matching element.
+    pub async fn all(&self) -> Result<Vec<Locator>, Error> {
+        let count = self.count().await?;
+        let mut locators = Vec::with_capacity(count);
+
+        for i in 0..count {
+            // Use the same pattern that works for individual nth() calls
+            // Instead of going through the implementation layer, use the API nth() method directly
+            let nth_locator = self.nth(i as i32).await?;
+            locators.push(nth_locator);
+        }
+
+        Ok(locators)
+    }
 }
 
 // Builder implementations

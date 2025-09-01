@@ -239,6 +239,16 @@ playwright::runtime_test!(locator_phase2_methods, {
     test_locator_phase2_methods().await.unwrap();
 });
 
+playwright::runtime_test!(locator_all_method, {
+    match test_locator_all_method().await {
+        Ok(_) => println!("✅ Locator all() method test passed"),
+        Err(e) => {
+            println!("❌ Locator all() method test failed: {:?}", e);
+            panic!("Test failed: {:?}", e);
+        }
+    }
+});
+
 async fn test_locator_phase2_methods() -> Result<(), playwright::Error> {
     let playwright = Playwright::initialize().await?;
     playwright.prepare()?;
@@ -319,6 +329,91 @@ async fn test_locator_phase2_methods() -> Result<(), playwright::Error> {
         .no_wait_after(false);
 
     println!("✅ Locator Phase 2 methods (clear, type, select_option) test passed");
+    Ok(())
+}
+
+async fn test_locator_all_method() -> Result<(), playwright::Error> {
+    let playwright = Playwright::initialize().await?;
+    playwright.prepare()?;
+    let chromium = playwright.chromium();
+    let browser = chromium.launcher().headless(true).launch().await?;
+    let context = browser.context_builder().build().await?;
+    let page = context.new_page().await?;
+
+    let html = r#"
+    <html>
+    <body>
+        <h1>All Method Test</h1>
+        <div id="test-container">
+            <input id="input1" name="field1" placeholder="First field" />
+            <input id="input2" name="field2" placeholder="Second field" />
+            <input id="input3" name="field3" placeholder="Third field" />
+            <select id="select1" name="dropdown">
+                <option value="opt1">Option 1</option>
+                <option value="opt2">Option 2</option>
+            </select>
+            <textarea id="textarea1" name="comments" placeholder="Comments"></textarea>
+        </div>
+    </body>
+    </html>
+    "#;
+
+    page.goto_builder(&format!("data:text/html,{}", html))
+        .goto()
+        .await?;
+
+    // First, test that basic locator functionality works
+    let input_locator = page.locator("input").await?;
+
+    // Test count() method first
+    println!("Testing count() method...");
+    let count = input_locator.count().await?;
+    println!("Found {} input elements", count);
+
+    // Test nth() method first
+    println!("Testing nth(0) method...");
+    let first_input = input_locator.nth(0).await?;
+    println!("nth(0) selector: {}", first_input.selector()?);
+
+    // Test nth(1) method
+    println!("Testing nth(1) method...");
+    let second_input = input_locator.nth(1).await?;
+    println!("nth(1) selector: {}", second_input.selector()?);
+
+    // Test if the ORIGINAL input_locator still works
+    println!("Testing get_attribute on ORIGINAL input_locator (not nth())...");
+    let original_count = input_locator.count().await?;
+    println!("✅ Original locator count still works: {}", original_count);
+    
+    // Test if we can create a fresh new locator that works
+    println!("Creating fresh new locator from page...");
+    let fresh_locator = page.locator("input").await?;
+    let fresh_count = fresh_locator.count().await?;
+    println!("✅ Fresh locator count: {}", fresh_count);
+    
+    // Test is_visible on fresh locator (should work for client-side)
+    println!("Testing is_visible on fresh locator (NOT nth())...");
+    let fresh_visible = fresh_locator.is_visible(None).await?;
+    println!("✅ Fresh locator is_visible: {}", fresh_visible);
+    
+    // Test get_attribute on the original fresh locator  
+    println!("Testing get_attribute on fresh locator (NOT nth())...");
+    let fresh_name = fresh_locator
+        .get_attribute("name", None)
+        .await?
+        .unwrap_or_else(|| "no-name".to_string());
+    println!("✅ Fresh locator name: {}", fresh_name);
+    
+    // NOW test get_attribute on nth() locator to compare
+    println!("Testing get_attribute on fresh locator nth(0)...");
+    let fresh_nth0 = fresh_locator.nth(0).await?;
+    let fresh_nth_name = fresh_nth0
+        .get_attribute("name", None)
+        .await?
+        .unwrap_or_else(|| "no-name".to_string());
+    println!("✅ Fresh nth(0) name: {}", fresh_nth_name);
+
+    println!("✅ Locator all() method test passed");
     Ok(())
 }
 

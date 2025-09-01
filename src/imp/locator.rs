@@ -333,9 +333,24 @@ impl Locator {
     }
 
     pub(crate) async fn count(&self) -> Result<usize, Arc<Error>> {
-        let v = send_message!(self, "count", Map::new());
-        let count = only_u64(&v)? as usize;
-        Ok(count)
+        // Handle both server-side and client-side locators
+        if self.channel.is_some() {
+            // Server-side locator: use protocol message
+            let v = send_message!(self, "count", Map::new());
+            let count = only_u64(&v)? as usize;
+            Ok(count)
+        } else {
+            // Client-side locator: delegate to frame
+            if let Some(frame) = self.frame.upgrade() {
+                let elements = frame
+                    .query_selector_all(&self.selector)
+                    .await
+                    .map_err(Arc::from)?;
+                Ok(elements.len())
+            } else {
+                Err(Arc::new(crate::Error::ObjectNotFound))
+            }
+        }
     }
 
     // State methods
@@ -421,16 +436,33 @@ impl Locator {
     }
 
     pub(crate) async fn nth(&self, index: i32) -> Result<Weak<Locator>, Arc<Error>> {
-        #[derive(Serialize)]
-        #[serde(rename_all = "camelCase")]
-        struct Args {
-            index: i32,
+        // Handle both server-side and client-side locators
+        if self.channel.is_some() {
+            // Server-side locator: use protocol message
+            #[derive(Serialize)]
+            #[serde(rename_all = "camelCase")]
+            struct Args {
+                index: i32,
+            }
+            let args = Args { index };
+            let v = send_message!(self, "nth", args);
+            let guid = only_guid(&v)?;
+            let locator = get_object!(self.context()?.lock().unwrap(), guid, Locator)?;
+            Ok(locator)
+        } else {
+            // Client-side locator: create new locator with nth selector
+            // CRITICAL: Use self.frame directly instead of self.frame.upgrade()
+            // This preserves the same frame reference as the parent locator
+            let nth_selector = format!("{} >> nth={}", self.selector, index);
+            let locator = Locator::new_client_side(self.frame.clone(), nth_selector);
+            let locator_arc = Arc::new(locator);
+            let locator_weak = Arc::downgrade(&locator_arc);
+
+            // Keep the locator alive (same pattern as frame.locator())
+            std::mem::forget(locator_arc.clone());
+
+            Ok(locator_weak)
         }
-        let args = Args { index };
-        let v = send_message!(self, "nth", args);
-        let guid = only_guid(&v)?;
-        let locator = get_object!(self.context()?.lock().unwrap(), guid, Locator)?;
-        Ok(locator)
     }
 
     pub(crate) async fn filter(&self, options: FilterOptions) -> Result<Weak<Locator>, Arc<Error>> {

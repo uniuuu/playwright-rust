@@ -48,5 +48,9 @@ rt-actix = ["actix-rt"]
 rt-async-std = ["async-std"]
 only-for-docs-rs = []
 
+[[example]]
+name = "field_extraction"
+path = "examples/field_extraction.rs"
+
 [package.metadata.docs.rs]
 features = ["only-for-docs-rs"]
